@@ -1,0 +1,26 @@
+[package]
+name = "tv-robot-app"
+version = "1.0.0"
+edition = "2018"
+authors = ["Larry850806 <pudding850806@gmail.com>"]
+
+[dependencies]
+actix-rt = "2.8.0"
+actix-web = "4.3.0"
+cocoa = "0.25"
+core-graphics = "0.23"
+enigo = "0.0.14"
+local-ip = "0.1.0"
+mime_guess = "2.0.3"
+objc = "0.2"
+qrcode = "0.13"
+rust-embed = "6.4.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[package.metadata.bundle]
+name = "肥豬電腦遙控器"
+identifier = "com.tv-robot.app"
+icon = ["icons/icon.icns"]
+category = "public.app-category.utilities"
+osx_minimum_system_version = "10.15"

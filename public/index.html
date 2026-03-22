@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>肥豬電腦遙控器</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css"
+    />
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+
+    <style>
+      * {
+        -moz-user-select: none;
+        -webkit-user-select: none;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        touch-action: manipulation;
+      }
+      h2 {
+        margin-top: 15px !important;
+      }
+      .main.ui {
+        width: 100% !important;
+      }
+      .main.ui > div {
+        display: flex;
+        margin-bottom: 5px;
+      }
+      .main.ui > div > button {
+        height: 35vh;
+        flex: 1;
+        margin: 0 0.15em !important;
+      }
+      .main.ui > div > button > i {
+        transform: scale(5);
+      }
+
+      .shortcut-row button {
+        height: 20vh !important;
+      }
+      .shortcut-row button i {
+        transform: scale(3) !important;
+      }
+
+      #mode-toggle {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 100;
+      }
+      #mode-toggle i {
+        transform: scale(1) !important;
+      }
+      #mouse-mode {
+        display: none;
+        width: 100%;
+        height: 100vh;
+        flex-direction: column;
+      }
+      #mouse-mode.active {
+        display: flex;
+      }
+      #mouse-trackpad {
+        flex: 1;
+        background-color: #e0e0e0;
+        touch-action: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2em;
+        color: #999;
+      }
+      #mouse-scroll-area {
+        width: 50px;
+        background-color: #ccc;
+        touch-action: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        writing-mode: vertical-rl;
+        color: #888;
+        font-size: 0.8em;
+      }
+
+      /* iPad / tablet */
+      @media (min-width: 768px) {
+        #mouse-buttons {
+          height: 25vh;
+          min-height: 160px;
+        }
+        #mouse-buttons button {
+          font-size: 2em;
+        }
+        #mouse-scroll-area {
+          width: 80px;
+          font-size: 1em;
+        }
+      }
+      #mouse-buttons {
+        display: flex;
+        height: 20vh;
+        min-height: 100px;
+      }
+      #mouse-buttons button {
+        flex: 1;
+        height: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        font-size: 1.4em;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button id="mode-toggle" class="ui labeled icon button">
+      <i class="mouse pointer icon"></i>
+      滑鼠模式
+    </button>
+
+    <h2 id="title">肥豬電腦遙控器</h2>
+
+    <div id="remote-mode" class="main ui container">
+      <div>
+        <button id="left" class="ui icon button">
+          <i class="icon backward"></i>
+        </button>
+        <button id="space" class="ui icon button">
+          <i class="icon pause" style="display: none;"></i>
+          <i class="icon play"></i>
+        </button>
+        <button id="right" class="ui icon button">
+          <i class="icon forward"></i>
+        </button>
+      </div>
+      <div>
+        <button id="volume_down" class="ui icon button">
+          <i class="icon volume down"></i>
+        </button>
+        <button id="volume_up" class="ui icon button">
+          <i class="icon volume up"></i>
+        </button>
+      </div>
+      <div class="shortcut-row">
+        <button id="fullscreen" class="ui icon button">
+          <i class="expand icon"></i>
+        </button>
+        <button id="mute" class="ui icon button">
+          <i class="volume off icon"></i>
+        </button>
+        <button id="skip_intro" class="ui icon button">
+          <i class="step forward icon"></i>
+        </button>
+        <button id="captions" class="ui icon button">
+          <i class="closed captioning icon"></i>
+        </button>
+      </div>
+    </div>
+
+    <div id="mouse-mode">
+      <div style="display: flex; flex: 1;">
+        <div id="mouse-trackpad">在此滑動控制滑鼠</div>
+        <div id="mouse-scroll-area">捲動</div>
+      </div>
+      <div id="mouse-buttons">
+        <button id="mouse-left" class="ui button">左鍵</button>
+        <button id="mouse-right" class="ui button">右鍵</button>
+      </div>
+    </div>
+
+    <script>
+      // ========== Helpers ==========
+      function post(url, body) {
+        var xhr = new XMLHttpRequest()
+        xhr.open('POST', url, true)
+        if (body) {
+          xhr.setRequestHeader('Content-Type', 'application/json')
+          xhr.send(JSON.stringify(body))
+        } else {
+          xhr.send()
+        }
+      }
+
+      function vibrate() {
+        if (navigator.vibrate) navigator.vibrate(50)
+      }
+
+      function $(id) { return document.getElementById(id) }
+
+      // ========== Remote Mode ==========
+      var spaceEl = $('space')
+      var leftEl = $('left')
+      var rightEl = $('right')
+      var pauseIcon = spaceEl.querySelector('.pause')
+      var playIcon = spaceEl.querySelector('.play')
+      var isPlaying = true
+
+      spaceEl.addEventListener('click', function () {
+        vibrate()
+        post('/api/space')
+        isPlaying = !isPlaying
+        pauseIcon.style.display = isPlaying ? 'none' : ''
+        playIcon.style.display = isPlaying ? '' : 'none'
+      })
+
+      $('volume_down').addEventListener('click', function () { vibrate(); post('/api/volume_down') })
+      $('volume_up').addEventListener('click', function () { vibrate(); post('/api/volume_up') })
+
+      // Left/Right: repeat while held
+      function holdButton(el, url) {
+        var pressing = false
+        var intervalId = null
+
+        function start(e) {
+          e.preventDefault()
+          if (pressing) return
+          pressing = true
+          vibrate()
+          post(url)
+          intervalId = setInterval(function () { post(url) }, 350)
+        }
+        function stop() {
+          pressing = false
+          if (intervalId) { clearInterval(intervalId); intervalId = null }
+        }
+
+        el.addEventListener('touchstart', start)
+        el.addEventListener('touchend', stop)
+        el.addEventListener('touchcancel', stop)
+        el.addEventListener('mousedown', start)
+        el.addEventListener('mouseup', stop)
+        el.addEventListener('mouseleave', stop)
+      }
+
+      holdButton(leftEl, '/api/left')
+      holdButton(rightEl, '/api/right')
+
+      // ========== Streaming Shortcuts ==========
+      $('fullscreen').addEventListener('click', function () { vibrate(); post('/api/fullscreen') })
+      $('mute').addEventListener('click', function () { vibrate(); post('/api/mute') })
+      $('skip_intro').addEventListener('click', function () { vibrate(); post('/api/skip_intro') })
+      $('captions').addEventListener('click', function () { vibrate(); post('/api/captions') })
+
+      // ========== Mouse Mode ==========
+      var modeToggle = $('mode-toggle')
+      var remoteMode = $('remote-mode')
+      var mouseMode = $('mouse-mode')
+      var title = $('title')
+      var mouseTrackpad = $('mouse-trackpad')
+      var mouseScrollArea = $('mouse-scroll-area')
+      var isMouseMode = false
+
+      modeToggle.addEventListener('click', function () {
+        isMouseMode = !isMouseMode
+        if (isMouseMode) {
+          remoteMode.style.display = 'none'
+          title.style.display = 'none'
+          mouseMode.classList.add('active')
+          modeToggle.innerHTML = '<i class="gamepad icon"></i> 遙控模式'
+        } else {
+          mouseMode.classList.remove('active')
+          remoteMode.style.display = ''
+          title.style.display = ''
+          modeToggle.innerHTML = '<i class="mouse pointer icon"></i> 滑鼠模式'
+        }
+      })
+
+      // Trackpad with throttle
+      var lastTouchX = null
+      var lastTouchY = null
+      var sensitivity = 2.0
+      var moveThrottled = false
+
+      mouseTrackpad.addEventListener('touchstart', function (e) {
+        e.preventDefault()
+        lastTouchX = e.touches[0].clientX
+        lastTouchY = e.touches[0].clientY
+      })
+
+      mouseTrackpad.addEventListener('touchmove', function (e) {
+        e.preventDefault()
+        if (moveThrottled) return
+        var t = e.touches[0]
+        if (lastTouchX !== null) {
+          var dx = Math.round((t.clientX - lastTouchX) * sensitivity)
+          var dy = Math.round((t.clientY - lastTouchY) * sensitivity)
+          if (dx !== 0 || dy !== 0) {
+            post('/api/mouse/move', { dx: dx, dy: dy })
+            moveThrottled = true
+            setTimeout(function () { moveThrottled = false }, 16)
+          }
+        }
+        lastTouchX = t.clientX
+        lastTouchY = t.clientY
+      })
+
+      mouseTrackpad.addEventListener('touchend', function () {
+        lastTouchX = null
+        lastTouchY = null
+      })
+
+      // Scroll with throttle
+      var lastScrollY = null
+      var scrollThrottled = false
+
+      mouseScrollArea.addEventListener('touchstart', function (e) {
+        e.preventDefault()
+        lastScrollY = e.touches[0].clientY
+      })
+
+      mouseScrollArea.addEventListener('touchmove', function (e) {
+        e.preventDefault()
+        if (scrollThrottled) return
+        var t = e.touches[0]
+        if (lastScrollY !== null) {
+          var dy = Math.round((lastScrollY - t.clientY) / 10)
+          if (dy !== 0) {
+            post('/api/mouse/scroll', { dy: dy })
+            scrollThrottled = true
+            setTimeout(function () { scrollThrottled = false }, 16)
+          }
+        }
+        lastScrollY = t.clientY
+      })
+
+      mouseScrollArea.addEventListener('touchend', function () {
+        lastScrollY = null
+      })
+
+      // Clicks
+      $('mouse-left').addEventListener('click', function () { vibrate(); post('/api/mouse/left_click') })
+      $('mouse-right').addEventListener('click', function () { vibrate(); post('/api/mouse/right_click') })
+    </script>
+  </body>
+</html>
