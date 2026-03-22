@@ -1,3 +1,4 @@
+#![allow(unexpected_cfgs)]
 mod menubar;
 mod server;
 

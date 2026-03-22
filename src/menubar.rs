@@ -90,7 +90,7 @@ unsafe fn create_qr_nsimage(url: &str) -> id {
     image
 }
 
-extern "C" fn copy_url_action(_this: &Object, _cmd: Sel) {
+extern "C" fn copy_url_action(_this: &Object, _cmd: Sel, _sender: id) {
     unsafe {
         if let Some(ref url) = URL_STRING {
             let pasteboard: id = msg_send![class!(NSPasteboard), generalPasteboard];
@@ -101,7 +101,7 @@ extern "C" fn copy_url_action(_this: &Object, _cmd: Sel) {
     }
 }
 
-extern "C" fn quit_action(_this: &Object, _cmd: Sel) {
+extern "C" fn quit_action(_this: &Object, _cmd: Sel, _sender: id) {
     unsafe {
         let app = NSApp();
         let _: () = msg_send![app, terminate: nil];
@@ -117,11 +117,11 @@ fn get_action_class() -> &'static Class {
         unsafe {
             decl.add_method(
                 sel!(copyUrl:),
-                copy_url_action as extern "C" fn(&Object, Sel),
+                copy_url_action as extern "C" fn(&Object, Sel, id),
             );
             decl.add_method(
                 sel!(quitApp:),
-                quit_action as extern "C" fn(&Object, Sel),
+                quit_action as extern "C" fn(&Object, Sel, id),
             );
         }
         decl.register();
@@ -143,15 +143,17 @@ pub fn run(url: &str) {
         let _: () = msg_send![status_item, retain];
 
         let button: id = msg_send![status_item, button];
-        let title = nsstring("🎮");
-        let _: () = msg_send![button, setTitle: title];
+        let icon: id = msg_send![class!(NSImage), imageWithSystemSymbolName: nsstring("gamecontroller.fill") accessibilityDescription: nil];
+        let _: () = msg_send![button, setImage: icon];
 
         // Create menu
         let menu = NSMenu::new(nil);
 
         // Custom view menu item
-        let view_width: f64 = 280.0;
-        let view_height: f64 = 340.0;
+        let padding: f64 = 20.0;
+        let qr_size: f64 = 200.0;
+        let view_width: f64 = qr_size + padding * 2.0;
+        let view_height: f64 = 300.0;
 
         let custom_view: id = msg_send![class!(NSView), alloc];
         let frame = NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(view_width, view_height));
@@ -160,8 +162,8 @@ pub fn run(url: &str) {
         // Title label
         let title_label: id = msg_send![class!(NSTextField), alloc];
         let title_frame = NSRect::new(
-            NSPoint::new(0.0, view_height - 35.0),
-            NSSize::new(view_width, 25.0),
+            NSPoint::new(padding, view_height - 35.0),
+            NSSize::new(qr_size, 25.0),
         );
         let title_label: id = msg_send![title_label, initWithFrame: title_frame];
         let _: () = msg_send![title_label, setStringValue: nsstring("肥豬電腦遙控器")];
@@ -169,7 +171,7 @@ pub fn run(url: &str) {
         let _: () = msg_send![title_label, setDrawsBackground: NO];
         let _: () = msg_send![title_label, setEditable: NO];
         let _: () = msg_send![title_label, setSelectable: NO];
-        let _: () = msg_send![title_label, setAlignment: 2i64]; // NSTextAlignmentCenter
+        let _: () = msg_send![title_label, setAlignment: 1i64]; // NSTextAlignmentCenter
         let font: id = msg_send![class!(NSFont), boldSystemFontOfSize: 16.0f64];
         let _: () = msg_send![title_label, setFont: font];
         let _: () = msg_send![custom_view, addSubview: title_label];
@@ -178,39 +180,27 @@ pub fn run(url: &str) {
         let qr_image = create_qr_nsimage(url);
         let qr_view: id = msg_send![class!(NSImageView), alloc];
         let qr_frame = NSRect::new(
-            NSPoint::new(40.0, view_height - 235.0),
-            NSSize::new(200.0, 200.0),
+            NSPoint::new(padding, view_height - 245.0),
+            NSSize::new(qr_size, qr_size),
         );
         let qr_view: id = msg_send![qr_view, initWithFrame: qr_frame];
         let _: () = msg_send![qr_view, setImage: qr_image];
         let _: () = msg_send![custom_view, addSubview: qr_view];
-
-        // URL label
-        let url_label: id = msg_send![class!(NSTextField), alloc];
-        let url_frame = NSRect::new(
-            NSPoint::new(0.0, view_height - 260.0),
-            NSSize::new(view_width, 20.0),
-        );
-        let url_label: id = msg_send![url_label, initWithFrame: url_frame];
-        let _: () = msg_send![url_label, setStringValue: nsstring(url)];
-        let _: () = msg_send![url_label, setBezeled: NO];
-        let _: () = msg_send![url_label, setDrawsBackground: NO];
-        let _: () = msg_send![url_label, setEditable: NO];
-        let _: () = msg_send![url_label, setSelectable: YES];
-        let _: () = msg_send![url_label, setAlignment: 2i64]; // NSTextAlignmentCenter
-        let small_font: id = msg_send![class!(NSFont), systemFontOfSize: 12.0f64];
-        let _: () = msg_send![url_label, setFont: small_font];
-        let _: () = msg_send![custom_view, addSubview: url_label];
 
         // Action target
         let action_class = get_action_class();
         let action_target: id = msg_send![action_class, new];
 
         // Copy URL button
+        let btn_width: f64 = 100.0;
+        let btn_gap: f64 = 10.0;
+        let btns_total: f64 = btn_width * 2.0 + btn_gap;
+        let btn_x: f64 = (view_width - btns_total) / 2.0;
+
         let copy_btn: id = msg_send![class!(NSButton), alloc];
         let copy_frame = NSRect::new(
-            NSPoint::new(20.0, 15.0),
-            NSSize::new(115.0, 32.0),
+            NSPoint::new(btn_x, 15.0),
+            NSSize::new(btn_width, 32.0),
         );
         let copy_btn: id = msg_send![copy_btn, initWithFrame: copy_frame];
         let _: () = msg_send![copy_btn, setTitle: nsstring("複製網址")];
@@ -222,8 +212,8 @@ pub fn run(url: &str) {
         // Quit button
         let quit_btn: id = msg_send![class!(NSButton), alloc];
         let quit_frame = NSRect::new(
-            NSPoint::new(145.0, 15.0),
-            NSSize::new(115.0, 32.0),
+            NSPoint::new(btn_x + btn_width + btn_gap, 15.0),
+            NSSize::new(btn_width, 32.0),
         );
         let quit_btn: id = msg_send![quit_btn, initWithFrame: quit_frame];
         let _: () = msg_send![quit_btn, setTitle: nsstring("結束")];
