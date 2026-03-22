@@ -150,6 +150,65 @@ async fn mouse_scroll_handler(params: web::Json<ScrollParams>) -> impl Responder
     HttpResponse::Ok().body("Ok")
 }
 
+#[derive(Deserialize)]
+struct TypeParams {
+    text: String,
+}
+
+async fn type_text(params: web::Json<TypeParams>) -> impl Responder {
+    let mut en = Enigo::new();
+    en.key_sequence(&params.text);
+    HttpResponse::Ok().body("Ok")
+}
+
+async fn press_backspace() -> impl Responder {
+    press(Key::Backspace);
+    "Ok"
+}
+
+async fn press_return() -> impl Responder {
+    press(Key::Return);
+    "Ok"
+}
+
+#[derive(Deserialize)]
+struct KeyParams {
+    key: String,
+}
+
+async fn press_key(params: web::Json<KeyParams>) -> impl Responder {
+    let mut en = Enigo::new();
+    match params.key.as_str() {
+        "escape" => en.key_click(Key::Escape),
+        "tab" => en.key_click(Key::Tab),
+        "up" => en.key_click(Key::UpArrow),
+        "down" => en.key_click(Key::DownArrow),
+        "space" => en.key_click(Key::Space),
+        "select_all" => {
+            en.key_down(Key::Meta);
+            en.key_click(Key::Raw(0x00)); // A
+            en.key_up(Key::Meta);
+        }
+        "copy" => {
+            en.key_down(Key::Meta);
+            en.key_click(Key::Raw(0x08)); // C
+            en.key_up(Key::Meta);
+        }
+        "paste" => {
+            en.key_down(Key::Meta);
+            en.key_click(Key::Raw(0x09)); // V
+            en.key_up(Key::Meta);
+        }
+        "undo" => {
+            en.key_down(Key::Meta);
+            en.key_click(Key::Raw(0x06)); // Z
+            en.key_up(Key::Meta);
+        }
+        _ => {}
+    }
+    HttpResponse::Ok().body("Ok")
+}
+
 /// Starts the HTTP server on a background thread and returns the URL.
 pub fn start_server_background() -> String {
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
@@ -176,6 +235,10 @@ pub fn start_server_background() -> String {
                     .route("/api/mouse/left_click", web::post().to(mouse_left_click))
                     .route("/api/mouse/right_click", web::post().to(mouse_right_click))
                     .route("/api/mouse/scroll", web::post().to(mouse_scroll_handler))
+                    .route("/api/type", web::post().to(type_text))
+                    .route("/api/backspace", web::post().to(press_backspace))
+                    .route("/api/return", web::post().to(press_return))
+                    .route("/api/key", web::post().to(press_key))
             })
             .bind(format!("0.0.0.0:{}", port_clone))
             .expect("Failed to bind port")

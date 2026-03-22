@@ -115,6 +115,71 @@
         border-radius: 0 !important;
         font-size: 1.4em;
       }
+      #keyboard-mode {
+        display: none;
+        width: 100%;
+        height: 100vh;
+        flex-direction: column;
+        padding: 60px 16px 16px;
+      }
+      #keyboard-mode.active {
+        display: flex;
+      }
+      #keyboard-mode h3 {
+        text-align: center;
+        margin-bottom: 12px;
+        color: #555;
+      }
+      #keyboard-input {
+        width: 100%;
+        font-size: 1.3em;
+        padding: 14px 16px;
+        border: 2px solid #ccc;
+        border-radius: 10px;
+        outline: none;
+        margin-bottom: 12px;
+        -webkit-user-select: text;
+        -moz-user-select: text;
+      }
+      #keyboard-input:focus {
+        border-color: #4183c4;
+      }
+      #keyboard-actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      #keyboard-actions button {
+        flex: 1;
+        height: 50px !important;
+        margin: 0 !important;
+        font-size: 1.1em !important;
+      }
+      #keyboard-shortcuts {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        flex: 1;
+      }
+      #keyboard-shortcuts button {
+        height: auto !important;
+        min-height: 55px;
+        margin: 0 !important;
+        font-size: 1em !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+      }
+      #keyboard-shortcuts button i {
+        transform: scale(1.5) !important;
+        margin-bottom: 4px;
+      }
+      #keyboard-shortcuts button span {
+        font-size: 0.75em;
+        color: #888;
+      }
     </style>
   </head>
 
@@ -171,6 +236,54 @@
       <div id="mouse-buttons">
         <button id="mouse-left" class="ui button">左鍵</button>
         <button id="mouse-right" class="ui button">右鍵</button>
+      </div>
+    </div>
+
+    <div id="keyboard-mode">
+      <h3>⌨️ 鍵盤模式</h3>
+      <input id="keyboard-input" type="text" placeholder="點此輸入文字..." autocomplete="off" autocorrect="off" autocapitalize="off" />
+      <div id="keyboard-actions">
+        <button id="keyboard-send" class="ui blue button">送出文字</button>
+        <button id="keyboard-enter" class="ui button">Enter</button>
+        <button id="keyboard-backspace" class="ui button">刪除</button>
+      </div>
+      <div id="keyboard-shortcuts">
+        <button id="key-esc" class="ui button">
+          <i class="close icon"></i>
+          <span>Esc</span>
+        </button>
+        <button id="key-tab" class="ui button">
+          <i class="indent icon"></i>
+          <span>Tab</span>
+        </button>
+        <button id="key-select-all" class="ui button">
+          <i class="expand arrows alternate icon"></i>
+          <span>全選</span>
+        </button>
+        <button id="key-copy" class="ui button">
+          <i class="copy icon"></i>
+          <span>複製</span>
+        </button>
+        <button id="key-paste" class="ui button">
+          <i class="paste icon"></i>
+          <span>貼上</span>
+        </button>
+        <button id="key-undo" class="ui button">
+          <i class="undo icon"></i>
+          <span>復原</span>
+        </button>
+        <button id="key-up" class="ui button">
+          <i class="arrow up icon"></i>
+          <span>↑</span>
+        </button>
+        <button id="key-down" class="ui button">
+          <i class="arrow down icon"></i>
+          <span>↓</span>
+        </button>
+        <button id="key-space" class="ui button">
+          <i class="minus icon"></i>
+          <span>空白</span>
+        </button>
       </div>
     </div>
 
@@ -247,28 +360,33 @@
       $('skip_intro').addEventListener('click', function () { vibrate(); post('/api/skip_intro') })
       $('captions').addEventListener('click', function () { vibrate(); post('/api/captions') })
 
-      // ========== Mouse Mode ==========
+      // ========== Mode Switching ==========
       var modeToggle = $('mode-toggle')
       var remoteMode = $('remote-mode')
       var mouseMode = $('mouse-mode')
+      var keyboardMode = $('keyboard-mode')
       var title = $('title')
       var mouseTrackpad = $('mouse-trackpad')
       var mouseScrollArea = $('mouse-scroll-area')
-      var isMouseMode = false
+      var currentMode = 0 // 0=remote, 1=mouse, 2=keyboard
+      var modes = [
+        { icon: 'mouse pointer', label: '滑鼠模式' },
+        { icon: 'keyboard', label: '鍵盤模式' },
+        { icon: 'gamepad', label: '遙控模式' }
+      ]
+
+      function setMode(mode) {
+        currentMode = mode
+        remoteMode.style.display = mode === 0 ? '' : 'none'
+        title.style.display = mode === 0 ? '' : 'none'
+        mouseMode.classList.toggle('active', mode === 1)
+        keyboardMode.classList.toggle('active', mode === 2)
+        var next = modes[mode]
+        modeToggle.innerHTML = '<i class="' + next.icon + ' icon"></i> ' + next.label
+      }
 
       modeToggle.addEventListener('click', function () {
-        isMouseMode = !isMouseMode
-        if (isMouseMode) {
-          remoteMode.style.display = 'none'
-          title.style.display = 'none'
-          mouseMode.classList.add('active')
-          modeToggle.innerHTML = '<i class="gamepad icon"></i> 遙控模式'
-        } else {
-          mouseMode.classList.remove('active')
-          remoteMode.style.display = ''
-          title.style.display = ''
-          modeToggle.innerHTML = '<i class="mouse pointer icon"></i> 滑鼠模式'
-        }
+        setMode((currentMode + 1) % 3)
       })
 
       // Trackpad with throttle
@@ -336,6 +454,44 @@
       // Clicks
       $('mouse-left').addEventListener('click', function () { vibrate(); post('/api/mouse/left_click') })
       $('mouse-right').addEventListener('click', function () { vibrate(); post('/api/mouse/right_click') })
+
+      // ========== Keyboard Mode ==========
+      var keyboardInput = $('keyboard-input')
+
+      $('keyboard-send').addEventListener('click', function () {
+        var text = keyboardInput.value
+        if (text) {
+          vibrate()
+          post('/api/type', { text: text })
+          keyboardInput.value = ''
+        }
+      })
+
+      $('keyboard-enter').addEventListener('click', function () {
+        var text = keyboardInput.value
+        if (text) {
+          post('/api/type', { text: text })
+          keyboardInput.value = ''
+        }
+        vibrate()
+        post('/api/return')
+      })
+
+      $('keyboard-backspace').addEventListener('click', function () {
+        vibrate()
+        post('/api/backspace')
+      })
+
+      // Shortcut keys
+      $('key-esc').addEventListener('click', function () { vibrate(); post('/api/key', { key: 'escape' }) })
+      $('key-tab').addEventListener('click', function () { vibrate(); post('/api/key', { key: 'tab' }) })
+      $('key-select-all').addEventListener('click', function () { vibrate(); post('/api/key', { key: 'select_all' }) })
+      $('key-copy').addEventListener('click', function () { vibrate(); post('/api/key', { key: 'copy' }) })
+      $('key-paste').addEventListener('click', function () { vibrate(); post('/api/key', { key: 'paste' }) })
+      $('key-undo').addEventListener('click', function () { vibrate(); post('/api/key', { key: 'undo' }) })
+      $('key-up').addEventListener('click', function () { vibrate(); post('/api/key', { key: 'up' }) })
+      $('key-down').addEventListener('click', function () { vibrate(); post('/api/key', { key: 'down' }) })
+      $('key-space').addEventListener('click', function () { vibrate(); post('/api/key', { key: 'space' }) })
     </script>
   </body>
 </html>
