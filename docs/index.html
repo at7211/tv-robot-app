@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>肥豬電腦遙控器 — 手機變遙控器</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: #0a0a1a;
+    color: #fff;
+    overflow-x: hidden;
+  }
+
+  /* --- Hero --- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(244,171,186,.15) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .hero-icon {
+    font-size: 100px;
+    margin-bottom: 1rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-16px); }
+  }
+  .hero h1 {
+    font-size: 3rem;
+    margin-bottom: .5rem;
+    background: linear-gradient(135deg, #f4abba, #ea596e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 1.25rem;
+    color: #aaa;
+    max-width: 500px;
+  }
+  .scroll-hint {
+    position: absolute;
+    bottom: 2rem;
+    animation: fade-bounce 2s ease-in-out infinite;
+    color: #555;
+    font-size: .9rem;
+  }
+  @keyframes fade-bounce {
+    0%,100% { opacity: .3; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(8px); }
+  }
+
+  /* --- Scene --- */
+  .scene {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 4rem 2rem 6rem;
+  }
+  .scene-title {
+    text-align: center;
+    font-size: 1.6rem;
+    margin-bottom: .5rem;
+    color: #ea596e;
+  }
+  .scene-sub {
+    text-align: center;
+    color: #888;
+    margin-bottom: 3rem;
+    font-size: 1.05rem;
+  }
+
+  /* --- Scenario animation --- */
+  .scenario {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 4rem;
+    min-height: 260px;
+  }
+
+  .device {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+  }
+  .device-body {
+    background: #1a1a2e;
+    border: 2px solid #333;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .tv .device-body {
+    width: 220px; height: 140px;
+    border-radius: 8px;
+    border-color: #444;
+  }
+  .tv .stand {
+    width: 60px; height: 6px;
+    background: #444;
+    border-radius: 0 0 4px 4px;
+  }
+  .laptop .device-body {
+    width: 160px; height: 100px;
+  }
+  .phone .device-body {
+    width: 70px; height: 130px;
+    border-radius: 16px;
+  }
+  .device-label {
+    font-size: .85rem;
+    color: #888;
+  }
+
+  /* Screen content */
+  .screen-content {
+    font-size: .7rem;
+    color: #666;
+    text-align: center;
+    padding: .5rem;
+  }
+  .tv .screen-content { font-size: 1.5rem; }
+
+  /* Arrows */
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .25rem;
+    color: #555;
+    font-size: .75rem;
+  }
+  .arrow-line {
+    width: 50px;
+    height: 2px;
+    background: linear-gradient(90deg, #ea596e, #f4abba);
+    position: relative;
+    opacity: 0;
+    animation: arrow-appear 1s ease forwards;
+  }
+  .arrow-line::after {
+    content: '';
+    position: absolute;
+    right: -6px; top: -4px;
+    border: 5px solid transparent;
+    border-left: 6px solid #f4abba;
+  }
+  .arrow-line.reverse::after {
+    right: auto; left: -6px;
+    border-left: none;
+    border-right: 6px solid #ea596e;
+  }
+  @keyframes arrow-appear {
+    from { opacity: 0; width: 0; }
+    to { opacity: 1; width: 50px; }
+  }
+
+  /* QR code in phone */
+  .qr-mini {
+    width: 40px; height: 40px;
+    background: #fff;
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: repeat(5,1fr);
+    grid-template-rows: repeat(5,1fr);
+    gap: 1px;
+    padding: 3px;
+  }
+  .qr-mini span {
+    background: #222;
+    border-radius: 1px;
+  }
+  .qr-mini span:nth-child(2),
+  .qr-mini span:nth-child(4),
+  .qr-mini span:nth-child(6),
+  .qr-mini span:nth-child(8),
+  .qr-mini span:nth-child(10),
+  .qr-mini span:nth-child(12),
+  .qr-mini span:nth-child(14),
+  .qr-mini span:nth-child(17),
+  .qr-mini span:nth-child(20),
+  .qr-mini span:nth-child(22) { background: transparent; }
+
+  /* Remote UI in phone */
+  .remote-ui {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+  }
+  .remote-ui .btn-row {
+    display: flex;
+    gap: 3px;
+  }
+  .remote-ui .btn {
+    width: 18px; height: 18px;
+    background: #ea596e;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: #fff;
+  }
+  .remote-ui .btn.wide { width: 42px; }
+
+  /* Phone scan animation */
+  .phone.scanning .qr-mini { animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); box-shadow: 0 0 0 rgba(234,89,110,0); }
+    50% { transform: scale(1.05); box-shadow: 0 0 12px rgba(234,89,110,.4); }
+  }
+  .phone.connected .qr-mini { display: none; }
+  .phone.connected .remote-ui { display: flex; }
+
+  /* Signal waves */
+  .signal {
+    position: absolute;
+    opacity: 0;
+  }
+  .signal-wave {
+    width: 8px; height: 8px;
+    border: 2px solid #ea596e;
+    border-radius: 50%;
+    animation: wave 1.5s ease-out infinite;
+  }
+  .signal-wave:nth-child(2) { animation-delay: .3s; }
+  .signal-wave:nth-child(3) { animation-delay: .6s; }
+  @keyframes wave {
+    from { transform: scale(1); opacity: .8; }
+    to { transform: scale(3); opacity: 0; }
+  }
+
+  /* --- Steps --- */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+  .step {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all .6s ease;
+  }
+  .step.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #ea596e, #f4abba);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+  .step-content h3 {
+    font-size: 1.15rem;
+    margin-bottom: .25rem;
+  }
+  .step-content p {
+    color: #999;
+    line-height: 1.6;
+  }
+
+  /* --- Features --- */
+  .features {
+    max-width: 800px;
+    margin: 5rem auto 0;
+    padding: 0 2rem 6rem;
+  }
+  .features-title {
+    text-align: center;
+    font-size: 1.6rem;
+    margin-bottom: 2.5rem;
+    color: #ea596e;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+  .feature-card {
+    background: #12122a;
+    border: 1px solid #222;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: transform .2s, border-color .2s;
+  }
+  .feature-card:hover {
+    transform: translateY(-4px);
+    border-color: #ea596e;
+  }
+  .feature-icon {
+    font-size: 2.2rem;
+    margin-bottom: .75rem;
+  }
+  .feature-card h4 {
+    margin-bottom: .4rem;
+    font-size: 1.05rem;
+  }
+  .feature-card p {
+    color: #888;
+    font-size: .85rem;
+    line-height: 1.5;
+  }
+
+  /* --- Footer --- */
+  .footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #444;
+    font-size: .85rem;
+    border-top: 1px solid #1a1a2e;
+  }
+  .footer a {
+    color: #ea596e;
+    text-decoration: none;
+  }
+
+  /* --- CTA --- */
+  .cta {
+    display: inline-block;
+    margin-top: 2rem;
+    padding: .85rem 2.5rem;
+    background: linear-gradient(135deg, #ea596e, #f4abba);
+    color: #fff;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .cta:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px rgba(234,89,110,.4);
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 2rem; }
+    .tv .device-body { width: 160px; height: 100px; }
+    .laptop .device-body { width: 110px; height: 70px; }
+    .phone .device-body { width: 56px; height: 100px; }
+    .arrow-line { width: 30px; }
+    @keyframes arrow-appear { to { width: 30px; } }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-icon">🐷</div>
+  <h1>肥豬電腦遙控器</h1>
+  <p>把你的手機變成電腦遙控器，投影追劇不再手忙腳亂</p>
+  <a class="cta" href="https://github.com/at7211/tv-robot-app/releases/latest">下載安裝</a>
+  <div class="scroll-hint">向下滑動看更多</div>
+</section>
+
+<!-- Scenario -->
+<section class="scene">
+  <div class="scene-title">為什麼需要它？</div>
+  <div class="scene-sub">電腦投影到電視，人坐在沙發上，離電腦好遠...</div>
+
+  <div class="scenario" id="scenario">
+    <!-- TV -->
+    <div class="device tv">
+      <div class="device-body">
+        <div class="screen-content">🎬</div>
+      </div>
+      <div class="stand"></div>
+      <div class="device-label">電視</div>
+    </div>
+
+    <div class="arrow">
+      <div class="arrow-line reverse" style="animation-delay:.5s"></div>
+      <span>投影</span>
+    </div>
+
+    <!-- Laptop -->
+    <div class="device laptop">
+      <div class="device-body">
+        <div class="screen-content">🖥️ 播放中</div>
+      </div>
+      <div class="device-label">你的電腦</div>
+    </div>
+
+    <div class="arrow">
+      <div class="arrow-line" style="animation-delay:1s"></div>
+      <span>Wi-Fi</span>
+    </div>
+
+    <!-- Phone -->
+    <div class="device phone scanning" id="phone">
+      <div class="device-body">
+        <div class="qr-mini" id="qr-display">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="remote-ui" id="remote-ui">
+          <div class="btn-row">
+            <div class="btn">⏮</div>
+            <div class="btn">⏯</div>
+            <div class="btn">⏭</div>
+          </div>
+          <div class="btn-row">
+            <div class="btn">🔉</div>
+            <div class="btn wide">🖱️</div>
+            <div class="btn">🔊</div>
+          </div>
+        </div>
+      </div>
+      <div class="device-label">你的手機</div>
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <div class="scene-title">三步驟開始使用</div>
+  <div class="scene-sub">簡單到連豬都會用</div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>安裝並啟動</h3>
+        <p>下載 .pkg 安裝檔，安裝後從 Launchpad 啟動。Menu bar 會出現一個遊戲控制器的圖示。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>掃描 QR Code</h3>
+        <p>點擊 menu bar 圖示，彈出 QR Code。用手機掃描後，自動開啟遙控器網頁。電腦與手機需在同一個 Wi-Fi 網路下。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>開始操控！</h3>
+        <p>手機瞬間變成你的遙控器。播放、暫停、調音量、切全螢幕，甚至可以遠端操控滑鼠，全部一指搞定。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features">
+  <div class="features-title">功能一覽</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">⏯️</div>
+      <h4>播放控制</h4>
+      <p>播放 / 暫停 / 快轉 / 倒轉，支援長按連續快轉</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔊</div>
+      <h4>音量調節</h4>
+      <p>直接控制 macOS 系統音量大小</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🖱️</div>
+      <h4>滑鼠模式</h4>
+      <p>手機變觸控板，遠端移動滑鼠、點擊、滾動</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📺</div>
+      <h4>全螢幕切換</h4>
+      <p>一鍵切換全螢幕，追劇更沉浸</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔇</div>
+      <h4>靜音 / 字幕</h4>
+      <p>快速靜音，或開關字幕</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⏭️</div>
+      <h4>跳過片頭</h4>
+      <p>Netflix 必備，一鍵跳過煩人片頭</p>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<div class="footer">
+  <p>肥豬電腦遙控器 — 開源免費 &nbsp;|&nbsp; <a href="https://github.com/at7211/tv-robot-app">GitHub</a></p>
+  <p style="margin-top:.5rem">Pig icon by <a href="https://github.com/twitter/twemoji">Twemoji</a> (CC-BY 4.0)</p>
+</div>
+
+<script>
+// Phone animation: scanning → connected
+const phone = document.getElementById('phone');
+function togglePhone() {
+  phone.classList.toggle('connected');
+  phone.classList.toggle('scanning');
+}
+setInterval(togglePhone, 3000);
+
+// Scroll reveal for steps
+const steps = document.querySelectorAll('.step');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.3 });
+steps.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
